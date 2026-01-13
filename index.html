@@ -3,19 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Widget v3.0</title>
+    <title>Widget v3.2 Unified</title>
     <style>
         /* --- CSS STYLES --- */
         body {
             margin: 0;
             padding: 0;
-            background: #0f172a; 
+            /* DEFAULT DARK BACKGROUND */
+            background-color: #0f172a; 
+            /* UNIFIED BACKGROUND IMAGE */
+            background-image: url('Notion Background.webp');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            /* FLEXBOX CENTERING */
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             font-family: sans-serif;
             color: white;
+        }
+
+        /* Dark overlay to make text readable on the main background */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); /* Darkens the main BG */
+            z-index: -1;
         }
 
         .main-container {
@@ -28,16 +44,20 @@
         .widget-box {
             width: 240px;
             height: 240px;
-            background: rgba(30, 41, 59, 0.8); /* Blue-ish tint */
+            /* GLASS EFFECT BACKGROUND */
+            background: rgba(30, 41, 59, 0.6); /* More transparent */
+            backdrop-filter: blur(10px); /* Blurs the background behind the widget */
+            -webkit-backdrop-filter: blur(10px);
+            
             border-radius: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             position: relative;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            overflow: hidden; /* Keeps image inside rounded corners */
+            overflow: hidden;
         }
 
         /* VERSION MARKER */
@@ -46,7 +66,7 @@
             top: 10px;
             left: 10px;
             font-size: 10px;
-            color: #4ade80; /* Green text */
+            color: #4ade80;
             font-weight: bold;
             background: rgba(0,0,0,0.5);
             padding: 2px 6px;
@@ -55,23 +75,22 @@
         }
 
         /* CLOCK */
-        #time { font-size: 48px; font-weight: bold; margin-bottom: 5px; }
-        #date { font-size: 14px; opacity: 0.8; }
+        #time { font-size: 48px; font-weight: bold; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        #date { font-size: 14px; opacity: 0.9; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
         /* WEATHER */
-        #weather-icon { font-size: 48px; margin-bottom: 5px; }
-        #temp { font-size: 32px; font-weight: bold; }
-        #condition { font-size: 14px; opacity: 0.8; margin-bottom: 15px; }
+        #weather-icon { font-size: 48px; margin-bottom: 5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        #temp { font-size: 32px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        #condition { font-size: 14px; opacity: 0.9; margin-bottom: 15px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
         
-        /* HIDDEN UPLOAD FOR LATER */
         input[type="file"] { display: none; }
         
-        /* BACKGROUND IMAGE */
+        /* WIDGET SPECIFIC BG (Optional - kept for consistency) */
         .bg-img {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             object-fit: cover;
-            opacity: 0.3; /* Adjusted opacity so text is readable */
+            opacity: 0.2; 
             pointer-events: none;
             z-index: 0;
         }
@@ -85,7 +104,7 @@
 
     <div class="main-container">
         <div class="widget-box" onclick="document.getElementById('imgUpload').click()">
-            <div class="version-tag">v3.1 FIXED</div> 
+            <div class="version-tag">v3.2 UNIFIED</div> 
             <img class="bg-img custom-bg" src="Notion Background.webp" onerror="this.style.display='none'"> 
             <div class="content">
                 <div id="time">00:00</div>
@@ -94,11 +113,11 @@
         </div>
 
         <div class="widget-box">
-            <div class="version-tag">v3.1 FIXED</div>
+            <div class="version-tag">v3.2 UNIFIED</div>
             <img class="bg-img custom-bg" src="Notion Background.webp" onerror="this.style.display='none'">
             
             <div class="content">
-                <div style="font-size:12px; margin-bottom:10px; font-weight:bold; color:#94a3b8;">LAS PIÑAS</div>
+                <div style="font-size:12px; margin-bottom:10px; font-weight:bold; color:#cbd5e1; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">LAS PIÑAS</div>
                 <div id="weather-icon">☀️</div>
                 <div id="temp">--°</div>
                 <div id="condition">Checking...</div>
@@ -123,16 +142,13 @@
         setInterval(updateTime, 1000);
         updateTime();
 
-
-        // --- 2. WEATHER LOGIC (FIXED) ---
-        
-        // Helper function to translate codes to Text + Icons
+        // --- 2. WEATHER LOGIC (With Fix) ---
         function getWeatherDetails(code) {
             const map = {
                 0: { desc: "Clear Sky", icon: "☀️" },
                 1: { desc: "Mainly Clear", icon: "🌤️" },
                 2: { desc: "Partly Cloudy", icon: "⛅" },
-                3: { desc: "Overcast", icon: "☁️" }, // <-- FIX FOR CODE 3
+                3: { desc: "Overcast", icon: "☁️" }, 
                 45: { desc: "Foggy", icon: "🌫️" },
                 48: { desc: "Rime Fog", icon: "🌫️" },
                 51: { desc: "Light Drizzle", icon: "🌦️" },
@@ -152,17 +168,12 @@
             try {
                 const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=14.4457&longitude=120.9836&current=temperature_2m,weather_code&timezone=Asia%2FManila');
                 const data = await res.json();
-                
-                // Get the Code (e.g., 3)
                 const code = data.current.weather_code;
-                
-                // Translate it
                 const weatherInfo = getWeatherDetails(code);
 
-                // Update Screen
                 document.getElementById('temp').innerText = Math.round(data.current.temperature_2m) + "°";
-                document.getElementById('condition').innerText = weatherInfo.desc; // Shows "Overcast"
-                document.getElementById('weather-icon').innerText = weatherInfo.icon; // Shows Cloud Icon
+                document.getElementById('condition').innerText = weatherInfo.desc; 
+                document.getElementById('weather-icon').innerText = weatherInfo.icon; 
                 
             } catch(e) {
                 document.getElementById('condition').innerText = "Offline";
@@ -170,16 +181,21 @@
         }
         updateWeather();
 
-
-        // --- 3. IMAGE UPLOAD LOGIC ---
-        // This allows you to click the widget to verify if the image loads manually
+        // --- 3. BACKGROUND SYNC LOGIC ---
+        // When you upload an image, it updates BOTH the widgets AND the main background
         document.getElementById('imgUpload').addEventListener('change', function(e) {
             if(e.target.files && e.target.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(ev) {
+                    const newBgUrl = 'url(' + ev.target.result + ')';
+                    
+                    // 1. Update Main Body Background
+                    document.body.style.backgroundImage = newBgUrl;
+                    
+                    // 2. Update Widget Inner Backgrounds
                     document.querySelectorAll('.custom-bg').forEach(el => {
                         el.src = ev.target.result;
-                        el.style.display = 'block'; // Ensure it shows up
+                        el.style.display = 'block';
                     });
                 }
                 reader.readAsDataURL(e.target.files[0]);
