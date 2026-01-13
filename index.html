@@ -41,7 +41,6 @@
             z-index: 0;
         }
 
-        /* Shared Container Styles */
         .widget-box {
             width: 240px;
             height: 240px;
@@ -90,7 +89,6 @@
             padding: 20px;
         }
 
-        /* Clock Specifics */
         .clock-display {
             text-align: center;
             font-weight: bold;
@@ -118,7 +116,6 @@
             opacity: 0.8;
         }
 
-        /* Weather Specifics */
         .weather-content {
             display: flex;
             flex-direction: column;
@@ -239,15 +236,111 @@
     </div>
 
     <script>
-        /* --- CLOCK FUNCTIONALITY --- */
+        // 1. START CLOCK IMMEDIATELY
         function updateClock() {
-            const now = new Date();
-            
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            
-            document.getElementById('time').textContent = `${hours}:${minutes}:${seconds}`;
-            
-            const dayOptions = { weekday: 'long' };
-            const dateOptions = { year: 'numeric', month: 'long', day:
+            try {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                
+                document.getElementById('time').textContent = hours + ':' + minutes + ':' + seconds;
+                
+                const dayOptions = { weekday: 'long' };
+                const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+                
+                document.getElementById('day').textContent = now.toLocaleDateString('en-US', dayOptions);
+                document.getElementById('date').textContent = now.toLocaleDateString('en-US', dateOptions);
+            } catch (e) {
+                console.error("Clock Error:", e);
+            }
+        }
+        
+        // Start clock now and set interval
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // 2. WEATHER LOGIC (Las Piñas)
+        function getWeatherIcon(code, isDay) {
+            const icons = {
+                0: isDay ? '☀️' : '🌙', 1: isDay ? '🌤️' : '🌙', 2: '⛅', 3: '☁️',
+                45: '🌫️', 48: '🌫️', 51: '🌦️', 53: '🌦️', 55: '🌧️',
+                61: '🌦️', 63: '🌧️', 65: '⛈️', 71: '🌨️', 73: '🌨️',
+                75: '❄️', 77: '🌨️', 80: '🌦️', 81: '🌧️', 82: '⛈️',
+                85: '🌨️', 86: '❄️', 95: '⛈️', 96: '⛈️', 99: '⛈️'
+            };
+            return icons[code] || '🌡️';
+        }
+
+        function getWeatherCondition(code) {
+            const conditions = {
+                0: 'Clear Sky', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
+                45: 'Foggy', 48: 'Rime Fog', 51: 'Light Drizzle', 53: 'Drizzle',
+                55: 'Heavy Drizzle', 61: 'Light Rain', 63: 'Rain', 65: 'Heavy Rain',
+                71: 'Light Snow', 73: 'Snow', 75: 'Heavy Snow', 77: 'Snow Grains',
+                80: 'Light Showers', 81: 'Showers', 82: 'Heavy Showers',
+                85: 'Light Snow Showers', 86: 'Snow Showers', 95: 'Thunderstorm',
+                96: 'Thunderstorm (Hail)', 99: 'Heavy Thunderstorm'
+            };
+            return conditions[code] || 'Unknown';
+        }
+
+        async function updateWeather() {
+            try {
+                const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=14.4457&longitude=120.9836&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,is_day,precipitation&timezone=Asia%2FManila');
+                if (!response.ok) throw new Error('Weather API Error');
+                
+                const data = await response.json();
+                const current = data.current;
+                
+                document.getElementById('tempMain').textContent = Math.round(current.temperature_2m) + '°';
+                document.getElementById('feelsLike').textContent = Math.round(current.apparent_temperature) + '°';
+                document.getElementById('humidity').textContent = current.relative_humidity_2m + '%';
+                document.getElementById('wind').textContent = Math.round(current.wind_speed_10m) + ' km/h';
+                document.getElementById('rain').textContent = current.precipitation + ' mm';
+                document.getElementById('weatherCondition').textContent = getWeatherCondition(current.weather_code);
+                document.getElementById('weatherIcon').textContent = getWeatherIcon(current.weather_code, current.is_day);
+            } catch (error) {
+                console.error('Weather error:', error);
+                document.getElementById('weatherCondition').textContent = 'Retry...';
+                setTimeout(updateWeather, 5000);
+            }
+        }
+        
+        // Start weather immediately
+        updateWeather();
+        setInterval(updateWeather, 1800000);
+
+        // 3. IMAGE LOGIC (Safely try to load background.jpg)
+        const permanentImageName = 'background.jpg';
+
+        function updateAllBackgrounds(src) {
+            const images = document.querySelectorAll('.widget-bg');
+            images.forEach(function(img) { img.src = src; });
+            document.getElementById('bodyBackgroundImg').src = src;
+        }
+
+        // Try to load the permanent image; if it fails, it just stays default.
+        const testImg = new Image();
+        testImg.onload = function() {
+            updateAllBackgrounds(permanentImageName);
+        };
+        testImg.src = permanentImageName;
+
+        // Enable the click-to-upload feature
+        const uploader = document.getElementById('imageUpload');
+        if (uploader) {
+            uploader.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        updateAllBackgrounds(event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
