@@ -9,7 +9,6 @@
         body {
             margin: 0;
             padding: 0;
-            /* CHANGED TO BLUE TO VERIFY UPDATE */
             background: #0f172a; 
             display: flex;
             justify-content: center;
@@ -38,6 +37,7 @@
             align-items: center;
             position: relative;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden; /* Keeps image inside rounded corners */
         }
 
         /* VERSION MARKER */
@@ -51,6 +51,7 @@
             background: rgba(0,0,0,0.5);
             padding: 2px 6px;
             border-radius: 4px;
+            z-index: 10;
         }
 
         /* CLOCK */
@@ -65,13 +66,12 @@
         /* HIDDEN UPLOAD FOR LATER */
         input[type="file"] { display: none; }
         
-        /* BACKGROUND IMAGE (Optional) */
+        /* BACKGROUND IMAGE */
         .bg-img {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             object-fit: cover;
-            opacity: 0.2;
-            border-radius: 20px;
+            opacity: 0.3; /* Adjusted opacity so text is readable */
             pointer-events: none;
             z-index: 0;
         }
@@ -85,15 +85,17 @@
 
     <div class="main-container">
         <div class="widget-box" onclick="document.getElementById('imgUpload').click()">
-            <div class="version-tag">v3.0 TEST</div> <img class="bg-img custom-bg" src=""> <div class="content">
+            <div class="version-tag">v3.1 FIXED</div> 
+            <img class="bg-img custom-bg" src="Notion Background.webp" onerror="this.style.display='none'"> 
+            <div class="content">
                 <div id="time">00:00</div>
-                <div id="date">Loading System...</div>
+                <div id="date">Loading...</div>
             </div>
         </div>
 
         <div class="widget-box">
-            <div class="version-tag">v3.0 TEST</div>
-            <img class="bg-img custom-bg" src="">
+            <div class="version-tag">v3.1 FIXED</div>
+            <img class="bg-img custom-bg" src="Notion Background.webp" onerror="this.style.display='none'">
             
             <div class="content">
                 <div style="font-size:12px; margin-bottom:10px; font-weight:bold; color:#94a3b8;">LAS PIÑAS</div>
@@ -105,14 +107,12 @@
     </div>
 
     <script>
-        // 1. SIMPLE CLOCK START
+        // --- 1. CLOCK LOGIC ---
         function updateTime() {
             const now = new Date();
-            // Manual formatting to be safe
             let h = now.getHours();
             let m = now.getMinutes();
             let s = now.getSeconds();
-            // Add leading zeros
             h = h < 10 ? '0'+h : h;
             m = m < 10 ? '0'+m : m;
             s = s < 10 ? '0'+s : s;
@@ -120,40 +120,67 @@
             document.getElementById('time').innerText = h + ":" + m + ":" + s;
             document.getElementById('date').innerText = now.toDateString();
         }
-        
-        // Run immediately, then every second
         setInterval(updateTime, 1000);
         updateTime();
 
-        // 2. SIMPLE WEATHER START
+
+        // --- 2. WEATHER LOGIC (FIXED) ---
+        
+        // Helper function to translate codes to Text + Icons
+        function getWeatherDetails(code) {
+            const map = {
+                0: { desc: "Clear Sky", icon: "☀️" },
+                1: { desc: "Mainly Clear", icon: "🌤️" },
+                2: { desc: "Partly Cloudy", icon: "⛅" },
+                3: { desc: "Overcast", icon: "☁️" }, // <-- FIX FOR CODE 3
+                45: { desc: "Foggy", icon: "🌫️" },
+                48: { desc: "Rime Fog", icon: "🌫️" },
+                51: { desc: "Light Drizzle", icon: "🌦️" },
+                53: { desc: "Drizzle", icon: "🌦️" },
+                55: { desc: "Heavy Drizzle", icon: "🌧️" },
+                61: { desc: "Light Rain", icon: "🌦️" },
+                63: { desc: "Rain", icon: "🌧️" },
+                65: { desc: "Heavy Rain", icon: "🌧️" },
+                80: { desc: "Showers", icon: "🌦️" },
+                81: { desc: "Showers", icon: "🌧️" },
+                95: { desc: "Thunderstorm", icon: "⛈️" }
+            };
+            return map[code] || { desc: "Unknown", icon: "❓" };
+        }
+
         async function updateWeather() {
             try {
                 const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=14.4457&longitude=120.9836&current=temperature_2m,weather_code&timezone=Asia%2FManila');
                 const data = await res.json();
                 
+                // Get the Code (e.g., 3)
+                const code = data.current.weather_code;
+                
+                // Translate it
+                const weatherInfo = getWeatherDetails(code);
+
+                // Update Screen
                 document.getElementById('temp').innerText = Math.round(data.current.temperature_2m) + "°";
-                document.getElementById('condition').innerText = "Code: " + data.current.weather_code;
+                document.getElementById('condition').innerText = weatherInfo.desc; // Shows "Overcast"
+                document.getElementById('weather-icon').innerText = weatherInfo.icon; // Shows Cloud Icon
+                
             } catch(e) {
-                document.getElementById('condition').innerText = "Offline Mode";
+                document.getElementById('condition').innerText = "Offline";
             }
         }
         updateWeather();
 
-        // 3. BACKGROUND IMAGE LOADER
-        // Looks for 'background.jpg' in GitHub. 
-        const bgImg = new Image();
-        bgImg.onload = function() {
-            // Only sets if image exists
-            document.querySelectorAll('.custom-bg').forEach(el => el.src = 'background.jpg');
-        }
-        bgImg.src = 'background.jpg';
 
-        // 4. CLICK TO UPLOAD (Temporary)
+        // --- 3. IMAGE UPLOAD LOGIC ---
+        // This allows you to click the widget to verify if the image loads manually
         document.getElementById('imgUpload').addEventListener('change', function(e) {
             if(e.target.files && e.target.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(ev) {
-                    document.querySelectorAll('.custom-bg').forEach(el => el.src = ev.target.result);
+                    document.querySelectorAll('.custom-bg').forEach(el => {
+                        el.src = ev.target.result;
+                        el.style.display = 'block'; // Ensure it shows up
+                    });
                 }
                 reader.readAsDataURL(e.target.files[0]);
             }
