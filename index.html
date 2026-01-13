@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Widget v4.1 Full Forecast</title>
+    <title>Widget v4.2 Side-by-Side</title>
     <style>
         /* --- CSS STYLES --- */
         body {
@@ -21,6 +21,7 @@
             min-height: 100vh;
             font-family: sans-serif;
             color: white;
+            overflow-x: hidden; /* Prevents scrollbar if it gets tight */
         }
 
         body::before {
@@ -34,9 +35,12 @@
         .main-container {
             display: flex;
             gap: 20px;
-            flex-wrap: wrap;
+            /* CRITICAL FIX: Forces items to stay in one row */
+            flex-wrap: nowrap; 
             justify-content: center;
-            align-items: flex-start; 
+            align-items: center;
+            max-width: 100%;
+            padding: 20px;
         }
 
         /* SHARED WIDGET STYLE */
@@ -53,19 +57,20 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            flex-shrink: 0; /* Prevents widgets from getting squished */
         }
 
-        /* CLOCK IS A SQUARE */
+        /* CLOCK WIDGET (Slightly smaller) */
         .clock-widget {
-            width: 240px;
-            height: 240px;
+            width: 220px;
+            height: 220px;
         }
 
-        /* WEATHER IS NOW A RECTANGLE (To fit forecast) */
+        /* WEATHER WIDGET (Rectangular, adjusted width) */
         .weather-widget {
-            width: 500px; /* WIDER */
-            height: 240px;
-            padding: 20px;
+            width: 460px;
+            height: 220px;
+            padding: 15px 20px; /* Reduced vertical padding */
             box-sizing: border-box;
             justify-content: space-between; 
         }
@@ -84,45 +89,46 @@
         }
 
         /* CLOCK TEXT */
-        #time { font-size: 48px; font-weight: bold; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        #date { font-size: 14px; opacity: 0.9; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        #time { font-size: 42px; font-weight: bold; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        #date { font-size: 13px; opacity: 0.9; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
         /* WEATHER TEXT */
         .weather-main {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             width: 100%;
-            padding-left: 20px;
+            padding-left: 10px;
+            margin-top: 5px;
         }
 
-        #weather-icon { font-size: 60px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        #weather-icon { font-size: 50px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
         
         .weather-info { text-align: left; }
-        #temp { font-size: 42px; font-weight: bold; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        #condition { font-size: 16px; font-weight: bold; opacity: 0.9; }
-        #feels-like { font-size: 12px; opacity: 0.7; margin-top: 4px; }
-        .location { font-size: 12px; font-weight: bold; color: #cbd5e1; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;}
+        #temp { font-size: 38px; font-weight: bold; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        #condition { font-size: 14px; font-weight: bold; opacity: 0.9; }
+        #feels-like { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+        .location { font-size: 11px; font-weight: bold; color: #cbd5e1; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px;}
 
         /* FORECAST SECTION */
         .forecast-container {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            margin-top: 10px;
+            margin-top: 5px;
             border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 15px;
+            padding-top: 10px;
         }
 
         .forecast-day {
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-size: 12px;
-            gap: 4px;
+            font-size: 11px;
+            gap: 3px;
         }
         .f-day { opacity: 0.7; font-weight: bold; }
-        .f-icon { font-size: 20px; }
+        .f-icon { font-size: 18px; }
         .f-temp { font-weight: bold; }
 
         input[type="file"] { display: none; }
@@ -146,7 +152,7 @@
 
     <div class="main-container">
         <div class="widget-box clock-widget" onclick="document.getElementById('imgUpload').click()">
-            <div class="version-tag">v4.1 FORECAST</div> 
+            <div class="version-tag">v4.2 SIDE-BY-SIDE</div> 
             <img class="bg-img custom-bg" src="Notion Background.webp" onerror="this.style.display='none'"> 
             <div class="content">
                 <div id="time">00:00</div>
@@ -155,7 +161,7 @@
         </div>
 
         <div class="widget-box weather-widget">
-            <div class="version-tag">v4.1 FORECAST</div>
+            <div class="version-tag">v4.2 SIDE-BY-SIDE</div>
             <img class="bg-img custom-bg" src="Notion Background.webp" onerror="this.style.display='none'">
             
             <div class="content" style="display:flex; flex-direction:column; justify-content:space-between; height:100%;">
@@ -171,7 +177,7 @@
                 </div>
 
                 <div class="forecast-container" id="forecast-box">
-                    <div class="forecast-day"><span class="f-day">Loading</span></div>
+                    <div class="forecast-day"><span class="f-day">--</span></div>
                 </div>
 
             </div>
@@ -189,11 +195,11 @@
             m = m < 10 ? '0'+m : m;
             s = s < 10 ? '0'+s : s;
 
-            // FIX: Manual Date Formatting for "Tuesday Jan 13 2026"
+            // Manual Date Formatting
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             
-            const dayName = days[now.getDay()]; // Gets "Tuesday"
+            const dayName = days[now.getDay()]; 
             const monthName = months[now.getMonth()];
             const dateNum = now.getDate();
             const year = now.getFullYear();
@@ -228,7 +234,6 @@
             return map[code] || { desc: "Unknown", icon: "❓" };
         }
 
-        // Get Short Day Name (e.g., "Mon") for Forecast
         function getDayName(dateStr) {
             const date = new Date(dateStr);
             return date.toLocaleDateString('en-US', { weekday: 'short' });
@@ -237,13 +242,12 @@
         async function updateWeather() {
             try {
                 const cacheBuster = "&t=" + new Date().getTime(); 
-                // Fetch Daily + Current data
                 const url = 'https://api.open-meteo.com/v1/forecast?latitude=14.4457&longitude=120.9836&current=temperature_2m,apparent_temperature,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FManila' + cacheBuster;
                 
                 const res = await fetch(url);
                 const data = await res.json();
 
-                // --- UPDATE CURRENT WEATHER ---
+                // --- CURRENT ---
                 const currentCode = data.current.weather_code;
                 const currentInfo = getWeatherDetails(currentCode);
 
@@ -252,11 +256,10 @@
                 document.getElementById('weather-icon').innerText = currentInfo.icon;
                 document.getElementById('feels-like').innerText = "Feels like " + Math.round(data.current.apparent_temperature) + "°";
 
-                // --- UPDATE 5-DAY FORECAST ---
+                // --- FORECAST ---
                 const daily = data.daily;
                 let forecastHTML = "";
 
-                // Loop for next 5 days (Start at index 1 to skip today)
                 for(let i = 1; i <= 5; i++) {
                     const dayName = getDayName(daily.time[i]);
                     const code = daily.weather_code[i];
@@ -281,7 +284,7 @@
         }
         
         updateWeather(); 
-        setInterval(updateWeather, 3600000); // 1 Hour Update
+        setInterval(updateWeather, 3600000); 
 
         // --- 3. BACKGROUND SYNC ---
         document.getElementById('imgUpload').addEventListener('change', function(e) {
