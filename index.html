@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Widget v4.3 Larger Fonts</title>
+    <title>Widget v4.4 Centered Layout</title>
     <style>
         /* --- CSS STYLES --- */
         body {
@@ -76,7 +76,7 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            font-size: 12px; /* INCREASED from 10px */
+            font-size: 12px;
             color: #4ade80;
             font-weight: bold;
             background: rgba(0,0,0,0.5);
@@ -85,58 +85,61 @@
             z-index: 10;
         }
 
-        /* --- CLOCK TEXT UPDATES --- */
+        /* --- CLOCK TEXT --- */
         #time { 
-            font-size: 44px; /* INCREASED from 42px */
+            font-size: 44px;
             font-weight: bold; 
             margin-bottom: 8px; 
             text-shadow: 0 2px 4px rgba(0,0,0,0.5); 
         }
         #date { 
-            font-size: 15px; /* INCREASED from 13px */
+            font-size: 15px;
             opacity: 0.9; 
             text-shadow: 0 1px 2px rgba(0,0,0,0.5); 
-            line-height: 1.4; /* Adds space between Day and Month */
+            line-height: 1.4;
         }
 
-        /* --- WEATHER TEXT UPDATES --- */
+        /* --- WEATHER MAIN SECTION (UPDATED) --- */
         .weather-main {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 40px; /* INCREASED GAP */
             width: 100%;
-            padding-left: 10px;
+            justify-content: center; /* CENTERED CONTENT */
             margin-top: 5px;
+            /* padding-left: 10px; REMOVED */
         }
 
         #weather-icon { 
-            font-size: 52px; /* INCREASED from 50px */
+            font-size: 52px;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); 
         }
         
-        .weather-info { text-align: left; }
+        .weather-info { 
+            text-align: center; /* CENTERED TEXT LINES */
+        }
         
         #temp { 
-            font-size: 40px; /* INCREASED from 38px */
+            font-size: 40px;
             font-weight: bold; 
             line-height: 1; 
             text-shadow: 0 2px 4px rgba(0,0,0,0.5); 
         }
         
         #condition { 
-            font-size: 16px; /* INCREASED from 14px */
+            font-size: 16px;
             font-weight: bold; 
             opacity: 0.9; 
         }
         
         #feels-like { 
-            font-size: 13px; /* INCREASED from 11px */
+            font-size: 13px;
             opacity: 0.7; 
             margin-top: 2px; 
         }
         
         .location { 
-            font-size: 13px; /* INCREASED from 11px */
+            font-size: 13px;
             font-weight: bold; 
             color: #cbd5e1; 
             text-transform: uppercase; 
@@ -144,7 +147,7 @@
             margin-bottom: 3px;
         }
 
-        /* --- FORECAST UPDATES --- */
+        /* --- FORECAST SECTION --- */
         .forecast-container {
             display: flex;
             justify-content: space-between;
@@ -158,11 +161,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-size: 13px; /* INCREASED from 11px */
+            font-size: 13px;
             gap: 3px;
         }
         .f-day { opacity: 0.7; font-weight: bold; }
-        .f-icon { font-size: 20px; /* INCREASED from 18px */ }
+        .f-icon { font-size: 20px; }
         .f-temp { font-weight: bold; }
 
         input[type="file"] { display: none; }
@@ -186,7 +189,7 @@
 
     <div class="main-container">
         <div class="widget-box clock-widget" onclick="document.getElementById('imgUpload').click()">
-            <div class="version-tag">v4.3 BIGGER</div> 
+            <div class="version-tag">v4.4 CENTERED</div> 
             <img class="bg-img custom-bg" src="Notion Background.webp" onerror="this.style.display='none'"> 
             <div class="content">
                 <div id="time">00:00</div>
@@ -195,7 +198,7 @@
         </div>
 
         <div class="widget-box weather-widget">
-            <div class="version-tag">v4.3 BIGGER</div>
+            <div class="version-tag">v4.4 CENTERED</div>
             <img class="bg-img custom-bg" src="Notion Background.webp" onerror="this.style.display='none'">
             
             <div class="content" style="display:flex; flex-direction:column; justify-content:space-between; height:100%;">
@@ -230,7 +233,6 @@
             s = s < 10 ? '0'+s : s;
 
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            // FULL MONTH NAMES NOW
             const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
             
             const dayName = days[now.getDay()]; 
@@ -238,11 +240,10 @@
             const dateNum = now.getDate();
             const year = now.getFullYear();
 
-            // NEW FORMAT: Day on Line 1, Date on Line 2
             const formattedDate = `${dayName}<br>${monthName} ${dateNum} ${year}`;
             
             document.getElementById('time').innerText = h + ":" + m + ":" + s;
-            document.getElementById('date').innerHTML = formattedDate; // innerHTML allows <br> to work
+            document.getElementById('date').innerHTML = formattedDate;
         }
         setInterval(updateTime, 1000);
         updateTime();
