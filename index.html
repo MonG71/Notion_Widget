@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Widget v4.0 Forecast</title>
+    <title>Widget v4.1 Full Forecast</title>
     <style>
         /* --- CSS STYLES --- */
         body {
@@ -36,7 +36,7 @@
             gap: 20px;
             flex-wrap: wrap;
             justify-content: center;
-            align-items: flex-start; /* Aligns widgets to top */
+            align-items: flex-start; 
         }
 
         /* SHARED WIDGET STYLE */
@@ -61,13 +61,13 @@
             height: 240px;
         }
 
-        /* WEATHER IS NOW A RECTANGLE */
+        /* WEATHER IS NOW A RECTANGLE (To fit forecast) */
         .weather-widget {
             width: 500px; /* WIDER */
             height: 240px;
             padding: 20px;
             box-sizing: border-box;
-            justify-content: space-between; /* Spreads content out */
+            justify-content: space-between; 
         }
 
         .version-tag {
@@ -146,7 +146,7 @@
 
     <div class="main-container">
         <div class="widget-box clock-widget" onclick="document.getElementById('imgUpload').click()">
-            <div class="version-tag">v4.0 FORECAST</div> 
+            <div class="version-tag">v4.1 FORECAST</div> 
             <img class="bg-img custom-bg" src="Notion Background.webp" onerror="this.style.display='none'"> 
             <div class="content">
                 <div id="time">00:00</div>
@@ -155,7 +155,7 @@
         </div>
 
         <div class="widget-box weather-widget">
-            <div class="version-tag">v4.0 FORECAST</div>
+            <div class="version-tag">v4.1 FORECAST</div>
             <img class="bg-img custom-bg" src="Notion Background.webp" onerror="this.style.display='none'">
             
             <div class="content" style="display:flex; flex-direction:column; justify-content:space-between; height:100%;">
@@ -188,8 +188,20 @@
             h = h < 10 ? '0'+h : h;
             m = m < 10 ? '0'+m : m;
             s = s < 10 ? '0'+s : s;
+
+            // FIX: Manual Date Formatting for "Tuesday Jan 13 2026"
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            const dayName = days[now.getDay()]; // Gets "Tuesday"
+            const monthName = months[now.getMonth()];
+            const dateNum = now.getDate();
+            const year = now.getFullYear();
+
+            const fullDateString = `${dayName} ${monthName} ${dateNum} ${year}`;
+            
             document.getElementById('time').innerText = h + ":" + m + ":" + s;
-            document.getElementById('date').innerText = now.toDateString();
+            document.getElementById('date').innerText = fullDateString;
         }
         setInterval(updateTime, 1000);
         updateTime();
@@ -216,7 +228,7 @@
             return map[code] || { desc: "Unknown", icon: "❓" };
         }
 
-        // Get Day Name (e.g., "Mon", "Tue")
+        // Get Short Day Name (e.g., "Mon") for Forecast
         function getDayName(dateStr) {
             const date = new Date(dateStr);
             return date.toLocaleDateString('en-US', { weekday: 'short' });
@@ -225,7 +237,7 @@
         async function updateWeather() {
             try {
                 const cacheBuster = "&t=" + new Date().getTime(); 
-                // Updated API URL to fetch Daily data + Apparent Temp
+                // Fetch Daily + Current data
                 const url = 'https://api.open-meteo.com/v1/forecast?latitude=14.4457&longitude=120.9836&current=temperature_2m,apparent_temperature,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FManila' + cacheBuster;
                 
                 const res = await fetch(url);
@@ -244,8 +256,7 @@
                 const daily = data.daily;
                 let forecastHTML = "";
 
-                // Loop through first 5 days (skipping today index 0 if you want, but usually 0 is today)
-                // Let's show Today + Next 4 Days, or just next 5. Let's do next 5 days (index 1 to 5)
+                // Loop for next 5 days (Start at index 1 to skip today)
                 for(let i = 1; i <= 5; i++) {
                     const dayName = getDayName(daily.time[i]);
                     const code = daily.weather_code[i];
