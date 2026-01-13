@@ -3,20 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Widget v3.2 Unified</title>
+    <title>Widget v4.0 Forecast</title>
     <style>
         /* --- CSS STYLES --- */
         body {
             margin: 0;
             padding: 0;
-            /* DEFAULT DARK BACKGROUND */
             background-color: #0f172a; 
             /* UNIFIED BACKGROUND IMAGE */
             background-image: url('Notion Background.webp');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            /* FLEXBOX CENTERING */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -25,12 +23,11 @@
             color: white;
         }
 
-        /* Dark overlay to make text readable on the main background */
         body::before {
             content: "";
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.6); /* Darkens the main BG */
+            background: rgba(15, 23, 42, 0.6);
             z-index: -1;
         }
 
@@ -39,28 +36,40 @@
             gap: 20px;
             flex-wrap: wrap;
             justify-content: center;
+            align-items: flex-start; /* Aligns widgets to top */
         }
 
+        /* SHARED WIDGET STYLE */
         .widget-box {
-            width: 240px;
-            height: 240px;
-            /* GLASS EFFECT BACKGROUND */
-            background: rgba(30, 41, 59, 0.6); /* More transparent */
-            backdrop-filter: blur(10px); /* Blurs the background behind the widget */
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            position: relative;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            overflow: hidden;
         }
 
-        /* VERSION MARKER */
+        /* CLOCK IS A SQUARE */
+        .clock-widget {
+            width: 240px;
+            height: 240px;
+        }
+
+        /* WEATHER IS NOW A RECTANGLE */
+        .weather-widget {
+            width: 500px; /* WIDER */
+            height: 240px;
+            padding: 20px;
+            box-sizing: border-box;
+            justify-content: space-between; /* Spreads content out */
+        }
+
         .version-tag {
             position: absolute;
             top: 10px;
@@ -74,18 +83,51 @@
             z-index: 10;
         }
 
-        /* CLOCK */
+        /* CLOCK TEXT */
         #time { font-size: 48px; font-weight: bold; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         #date { font-size: 14px; opacity: 0.9; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
-        /* WEATHER */
-        #weather-icon { font-size: 48px; margin-bottom: 5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-        #temp { font-size: 32px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        #condition { font-size: 14px; opacity: 0.9; margin-bottom: 15px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        /* WEATHER TEXT */
+        .weather-main {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            padding-left: 20px;
+        }
+
+        #weather-icon { font-size: 60px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
         
+        .weather-info { text-align: left; }
+        #temp { font-size: 42px; font-weight: bold; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        #condition { font-size: 16px; font-weight: bold; opacity: 0.9; }
+        #feels-like { font-size: 12px; opacity: 0.7; margin-top: 4px; }
+        .location { font-size: 12px; font-weight: bold; color: #cbd5e1; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;}
+
+        /* FORECAST SECTION */
+        .forecast-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 15px;
+        }
+
+        .forecast-day {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            gap: 4px;
+        }
+        .f-day { opacity: 0.7; font-weight: bold; }
+        .f-icon { font-size: 20px; }
+        .f-temp { font-weight: bold; }
+
         input[type="file"] { display: none; }
         
-        /* WIDGET SPECIFIC BG (Optional - kept for consistency) */
+        /* BG IMAGE FOR WIDGETS */
         .bg-img {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -94,7 +136,7 @@
             pointer-events: none;
             z-index: 0;
         }
-        .content { z-index: 1; text-align: center; }
+        .content { z-index: 1; text-align: center; width: 100%; }
 
     </style>
 </head>
@@ -103,8 +145,8 @@
     <input type="file" id="imgUpload" accept="image/*">
 
     <div class="main-container">
-        <div class="widget-box" onclick="document.getElementById('imgUpload').click()">
-            <div class="version-tag">v3.2 UNIFIED</div> 
+        <div class="widget-box clock-widget" onclick="document.getElementById('imgUpload').click()">
+            <div class="version-tag">v4.0 FORECAST</div> 
             <img class="bg-img custom-bg" src="Notion Background.webp" onerror="this.style.display='none'"> 
             <div class="content">
                 <div id="time">00:00</div>
@@ -112,15 +154,26 @@
             </div>
         </div>
 
-        <div class="widget-box">
-            <div class="version-tag">v3.2 UNIFIED</div>
+        <div class="widget-box weather-widget">
+            <div class="version-tag">v4.0 FORECAST</div>
             <img class="bg-img custom-bg" src="Notion Background.webp" onerror="this.style.display='none'">
             
-            <div class="content">
-                <div style="font-size:12px; margin-bottom:10px; font-weight:bold; color:#cbd5e1; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">LAS PIÑAS</div>
-                <div id="weather-icon">☀️</div>
-                <div id="temp">--°</div>
-                <div id="condition">Checking...</div>
+            <div class="content" style="display:flex; flex-direction:column; justify-content:space-between; height:100%;">
+                
+                <div class="weather-main">
+                    <div id="weather-icon">☀️</div>
+                    <div class="weather-info">
+                        <div class="location">LAS PIÑAS</div>
+                        <div id="temp">--°</div>
+                        <div id="condition">Checking...</div>
+                        <div id="feels-like">Feels like --°</div>
+                    </div>
+                </div>
+
+                <div class="forecast-container" id="forecast-box">
+                    <div class="forecast-day"><span class="f-day">Loading</span></div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -135,26 +188,25 @@
             h = h < 10 ? '0'+h : h;
             m = m < 10 ? '0'+m : m;
             s = s < 10 ? '0'+s : s;
-            
             document.getElementById('time').innerText = h + ":" + m + ":" + s;
             document.getElementById('date').innerText = now.toDateString();
         }
         setInterval(updateTime, 1000);
         updateTime();
 
-        // --- 2. WEATHER LOGIC (With Fix) ---
+        // --- 2. WEATHER LOGIC ---
         function getWeatherDetails(code) {
             const map = {
-                0: { desc: "Clear Sky", icon: "☀️" },
+                0: { desc: "Clear", icon: "☀️" },
                 1: { desc: "Mainly Clear", icon: "🌤️" },
                 2: { desc: "Partly Cloudy", icon: "⛅" },
                 3: { desc: "Overcast", icon: "☁️" }, 
-                45: { desc: "Foggy", icon: "🌫️" },
+                45: { desc: "Fog", icon: "🌫️" },
                 48: { desc: "Rime Fog", icon: "🌫️" },
-                51: { desc: "Light Drizzle", icon: "🌦️" },
+                51: { desc: "Drizzle", icon: "🌦️" },
                 53: { desc: "Drizzle", icon: "🌦️" },
                 55: { desc: "Heavy Drizzle", icon: "🌧️" },
-                61: { desc: "Light Rain", icon: "🌦️" },
+                61: { desc: "Rain", icon: "🌦️" },
                 63: { desc: "Rain", icon: "🌧️" },
                 65: { desc: "Heavy Rain", icon: "🌧️" },
                 80: { desc: "Showers", icon: "🌦️" },
@@ -164,35 +216,69 @@
             return map[code] || { desc: "Unknown", icon: "❓" };
         }
 
+        // Get Day Name (e.g., "Mon", "Tue")
+        function getDayName(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { weekday: 'short' });
+        }
+
         async function updateWeather() {
             try {
-                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=14.4457&longitude=120.9836&current=temperature_2m,weather_code&timezone=Asia%2FManila');
+                const cacheBuster = "&t=" + new Date().getTime(); 
+                // Updated API URL to fetch Daily data + Apparent Temp
+                const url = 'https://api.open-meteo.com/v1/forecast?latitude=14.4457&longitude=120.9836&current=temperature_2m,apparent_temperature,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FManila' + cacheBuster;
+                
+                const res = await fetch(url);
                 const data = await res.json();
-                const code = data.current.weather_code;
-                const weatherInfo = getWeatherDetails(code);
+
+                // --- UPDATE CURRENT WEATHER ---
+                const currentCode = data.current.weather_code;
+                const currentInfo = getWeatherDetails(currentCode);
 
                 document.getElementById('temp').innerText = Math.round(data.current.temperature_2m) + "°";
-                document.getElementById('condition').innerText = weatherInfo.desc; 
-                document.getElementById('weather-icon').innerText = weatherInfo.icon; 
+                document.getElementById('condition').innerText = currentInfo.desc; 
+                document.getElementById('weather-icon').innerText = currentInfo.icon;
+                document.getElementById('feels-like').innerText = "Feels like " + Math.round(data.current.apparent_temperature) + "°";
+
+                // --- UPDATE 5-DAY FORECAST ---
+                const daily = data.daily;
+                let forecastHTML = "";
+
+                // Loop through first 5 days (skipping today index 0 if you want, but usually 0 is today)
+                // Let's show Today + Next 4 Days, or just next 5. Let's do next 5 days (index 1 to 5)
+                for(let i = 1; i <= 5; i++) {
+                    const dayName = getDayName(daily.time[i]);
+                    const code = daily.weather_code[i];
+                    const icon = getWeatherDetails(code).icon;
+                    const maxTemp = Math.round(daily.temperature_2m_max[i]);
+                    const minTemp = Math.round(daily.temperature_2m_min[i]);
+
+                    forecastHTML += `
+                        <div class="forecast-day">
+                            <span class="f-day">${dayName}</span>
+                            <span class="f-icon">${icon}</span>
+                            <span class="f-temp">${maxTemp}° / ${minTemp}°</span>
+                        </div>
+                    `;
+                }
+                document.getElementById('forecast-box').innerHTML = forecastHTML;
                 
             } catch(e) {
+                console.log(e);
                 document.getElementById('condition').innerText = "Offline";
             }
         }
-        updateWeather();
+        
+        updateWeather(); 
+        setInterval(updateWeather, 3600000); // 1 Hour Update
 
-        // --- 3. BACKGROUND SYNC LOGIC ---
-        // When you upload an image, it updates BOTH the widgets AND the main background
+        // --- 3. BACKGROUND SYNC ---
         document.getElementById('imgUpload').addEventListener('change', function(e) {
             if(e.target.files && e.target.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(ev) {
                     const newBgUrl = 'url(' + ev.target.result + ')';
-                    
-                    // 1. Update Main Body Background
                     document.body.style.backgroundImage = newBgUrl;
-                    
-                    // 2. Update Widget Inner Backgrounds
                     document.querySelectorAll('.custom-bg').forEach(el => {
                         el.src = ev.target.result;
                         el.style.display = 'block';
