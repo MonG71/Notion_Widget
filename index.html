@@ -3,258 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notion Widget</title>
+    <title>Widget v3.0</title>
     <style>
-        /* CSS STYLES */
+        /* --- CSS STYLES --- */
         body {
             margin: 0;
             padding: 0;
-            background: #1a1a1a;
+            /* CHANGED TO BLUE TO VERIFY UPDATE */
+            background: #0f172a; 
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: sans-serif;
             color: white;
         }
 
         .main-container {
             display: flex;
             gap: 20px;
-            padding: 20px;
             flex-wrap: wrap;
             justify-content: center;
-            z-index: 10;
         }
 
-        /* WIDGET BOXES */
         .widget-box {
             width: 240px;
             height: 240px;
-            position: relative;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(30, 41, 59, 0.8); /* Blue-ish tint */
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* BACKGROUND IMAGE LAYER */
-        .bg-layer {
+        /* VERSION MARKER */
+        .version-tag {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.3; /* Dim the image so text is readable */
-            z-index: 0;
-            pointer-events: none;
+            top: 10px;
+            left: 10px;
+            font-size: 10px;
+            color: #4ade80; /* Green text */
+            font-weight: bold;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 6px;
+            border-radius: 4px;
         }
 
-        /* CONTENT LAYER */
-        .content {
-            z-index: 1;
-            text-align: center;
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-        }
+        /* CLOCK */
+        #time { font-size: 48px; font-weight: bold; margin-bottom: 5px; }
+        #date { font-size: 14px; opacity: 0.8; }
 
-        /* CLOCK STYLES */
-        #time {
-            font-size: 42px;
-            font-weight: 700;
-            margin-bottom: 5px;
-            font-variant-numeric: tabular-nums;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-        }
-        #day { font-size: 16px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8; margin-bottom: 5px; }
-        #date { font-size: 14px; opacity: 0.7; }
-
-        /* WEATHER STYLES */
-        .weather-main { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
-        #weather-icon { font-size: 48px; }
-        #temp { font-size: 48px; font-weight: 700; }
-        #condition { font-size: 14px; text-transform: capitalize; margin-bottom: 15px; opacity: 0.9; }
+        /* WEATHER */
+        #weather-icon { font-size: 48px; margin-bottom: 5px; }
+        #temp { font-size: 32px; font-weight: bold; }
+        #condition { font-size: 14px; opacity: 0.8; margin-bottom: 15px; }
         
-        .weather-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            font-size: 11px;
-            background: rgba(255,255,255,0.05);
-            padding: 10px;
-            border-radius: 8px;
-            width: 80%;
-            margin: 0 auto;
-        }
-        .grid-item { display: flex; flex-direction: column; }
-        .grid-label { opacity: 0.6; margin-bottom: 2px; }
-        .grid-val { font-weight: bold; }
-
-        /* UPLOAD BUTTON (Hidden but clickable area) */
-        .click-area {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            cursor: pointer;
-        }
+        /* HIDDEN UPLOAD FOR LATER */
         input[type="file"] { display: none; }
         
-        /* ERROR MESSAGE DISPLAY */
-        #debug-msg {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            color: #ff6b6b;
-            font-size: 12px;
-            background: rgba(0,0,0,0.8);
-            padding: 5px;
-            border-radius: 4px;
-            display: none; /* Hidden unless error occurs */
-            z-index: 100;
+        /* BACKGROUND IMAGE (Optional) */
+        .bg-img {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover;
+            opacity: 0.2;
+            border-radius: 20px;
+            pointer-events: none;
+            z-index: 0;
         }
+        .content { z-index: 1; text-align: center; }
+
     </style>
 </head>
 <body>
 
     <input type="file" id="imgUpload" accept="image/*">
 
-    <div id="debug-msg"></div>
-
     <div class="main-container">
-        
-        <div class="widget-box">
-            <img class="bg-layer custom-bg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23222' width='100' height='100'/%3E%3C/svg%3E">
-            
-            <div class="content">
-                <div id="time">--:--:--</div>
-                <div id="day">Loading</div>
-                <div id="date">...</div>
-            </div>
-            <div class="click-area" onclick="document.getElementById('imgUpload').click()" title="Click to change background"></div>
-        </div>
-
-        <div class="widget-box">
-            <img class="bg-layer custom-bg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23222' width='100' height='100'/%3E%3C/svg%3E">
-            
-            <div class="content">
-                <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">Las Piñas, PH</div>
-                <div class="weather-main">
-                    <div id="weather-icon">☀️</div>
-                    <div id="temp">--°</div>
-                </div>
-                <div id="condition">Loading Weather...</div>
-                
-                <div class="weather-grid">
-                    <div class="grid-item"><span class="grid-label">Feels</span><span class="grid-val" id="feels">--</span></div>
-                    <div class="grid-item"><span class="grid-label">Hum</span><span class="grid-val" id="hum">--</span></div>
-                    <div class="grid-item"><span class="grid-label">Wind</span><span class="grid-val" id="wind">--</span></div>
-                    <div class="grid-item"><span class="grid-label">Rain</span><span class="grid-val" id="rain">--</span></div>
-                </div>
+        <div class="widget-box" onclick="document.getElementById('imgUpload').click()">
+            <div class="version-tag">v3.0 TEST</div> <img class="bg-img custom-bg" src=""> <div class="content">
+                <div id="time">00:00</div>
+                <div id="date">Loading System...</div>
             </div>
         </div>
 
+        <div class="widget-box">
+            <div class="version-tag">v3.0 TEST</div>
+            <img class="bg-img custom-bg" src="">
+            
+            <div class="content">
+                <div style="font-size:12px; margin-bottom:10px; font-weight:bold; color:#94a3b8;">LAS PIÑAS</div>
+                <div id="weather-icon">☀️</div>
+                <div id="temp">--°</div>
+                <div id="condition">Checking...</div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // --- 1. ERROR HANDLING ---
-        function showError(msg) {
-            const el = document.getElementById('debug-msg');
-            el.style.display = 'block';
-            el.textContent = "Error: " + msg;
-            console.error(msg);
+        // 1. SIMPLE CLOCK START
+        function updateTime() {
+            const now = new Date();
+            // Manual formatting to be safe
+            let h = now.getHours();
+            let m = now.getMinutes();
+            let s = now.getSeconds();
+            // Add leading zeros
+            h = h < 10 ? '0'+h : h;
+            m = m < 10 ? '0'+m : m;
+            s = s < 10 ? '0'+s : s;
+            
+            document.getElementById('time').innerText = h + ":" + m + ":" + s;
+            document.getElementById('date').innerText = now.toDateString();
         }
+        
+        // Run immediately, then every second
+        setInterval(updateTime, 1000);
+        updateTime();
 
-        // --- 2. CLOCK (Runs independently) ---
-        function startClock() {
+        // 2. SIMPLE WEATHER START
+        async function updateWeather() {
             try {
-                function update() {
-                    const now = new Date();
-                    // Time
-                    document.getElementById('time').textContent = now.toLocaleTimeString('en-US', { hour12: false });
-                    // Date
-                    document.getElementById('day').textContent = now.toLocaleDateString('en-US', { weekday: 'long' });
-                    document.getElementById('date').textContent = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                }
-                update();
-                setInterval(update, 1000);
-            } catch (e) {
-                showError("Clock failed: " + e.message);
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=14.4457&longitude=120.9836&current=temperature_2m,weather_code&timezone=Asia%2FManila');
+                const data = await res.json();
+                
+                document.getElementById('temp').innerText = Math.round(data.current.temperature_2m) + "°";
+                document.getElementById('condition').innerText = "Code: " + data.current.weather_code;
+            } catch(e) {
+                document.getElementById('condition').innerText = "Offline Mode";
             }
         }
+        updateWeather();
 
-        // --- 3. WEATHER (Runs independently) ---
-        async function startWeather() {
-            try {
-                const url = "https://api.open-meteo.com/v1/forecast?latitude=14.4457&longitude=120.9836&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,is_day,precipitation&timezone=Asia%2FManila";
-                
-                const response = await fetch(url);
-                if (!response.ok) throw new Error("Weather API Error");
-                
-                const data = await response.json();
-                const cur = data.current;
-
-                // Icons
-                const icons = { 0: cur.is_day?'☀️':'🌙', 1: '🌤️', 2: '⛅', 3: '☁️', 45: '🌫️', 51: '🌦️', 61: '🌧️', 80: '🌦️', 95: '⛈️' };
-                const icon = icons[cur.weather_code] || '🌡️';
-
-                // Update DOM
-                document.getElementById('temp').textContent = Math.round(cur.temperature_2m) + "°";
-                document.getElementById('weather-icon').textContent = icon;
-                document.getElementById('condition').textContent = "Code: " + cur.weather_code; // Simplified for robustness
-                document.getElementById('feels').textContent = Math.round(cur.apparent_temperature) + "°";
-                document.getElementById('hum').textContent = cur.relative_humidity_2m + "%";
-                document.getElementById('wind').textContent = Math.round(cur.wind_speed_10m) + "k";
-                document.getElementById('rain').textContent = cur.precipitation + "mm";
-
-            } catch (e) {
-                document.getElementById('condition').textContent = "Offline";
-                showError("Weather failed: " + e.message);
-            }
+        // 3. BACKGROUND IMAGE LOADER
+        // Looks for 'background.jpg' in GitHub. 
+        const bgImg = new Image();
+        bgImg.onload = function() {
+            // Only sets if image exists
+            document.querySelectorAll('.custom-bg').forEach(el => el.src = 'background.jpg');
         }
+        bgImg.src = 'background.jpg';
 
-        // --- 4. IMAGE LOADING ---
-        function loadImages() {
-            const fileName = 'background.jpg'; // Ensure this matches your GitHub file EXACTLY
-            const imgEl = new Image();
-            imgEl.onload = function() {
-                document.querySelectorAll('.custom-bg').forEach(el => el.src = fileName);
-            };
-            imgEl.onerror = function() {
-                // If background.jpg doesn't exist, do nothing (keep default dark gray)
-                console.log("No background.jpg found, using default.");
-            };
-            imgEl.src = fileName;
-        }
-
-        // --- 5. INITIALIZE ---
-        // Run everything when page loads
-        window.addEventListener('DOMContentLoaded', () => {
-            startClock();
-            startWeather();
-            loadImages();
-        });
-
-        // --- 6. UPLOAD HANDLER (For testing) ---
-        document.getElementById('imgUpload').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if(file) {
+        // 4. CLICK TO UPLOAD (Temporary)
+        document.getElementById('imgUpload').addEventListener('change', function(e) {
+            if(e.target.files && e.target.files[0]) {
                 const reader = new FileReader();
-                reader.onload = (ev) => {
+                reader.onload = function(ev) {
                     document.querySelectorAll('.custom-bg').forEach(el => el.src = ev.target.result);
-                };
-                reader.readAsDataURL(file);
+                }
+                reader.readAsDataURL(e.target.files[0]);
             }
         });
     </script>
