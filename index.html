@@ -1,779 +1,245 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather Widget Generator</title>
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather Widget</title>
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            /* Background image lives alongside this file in the repo and is
-               always named exactly "Notion Background.webp" (capital N and B,
-               space-separated). GitHub Pages is case-sensitive, so this must
-               match the stored filename exactly — swap the file, not this rule. */
-            background-color: #0f172a;
-            background-image: url('Notion%20Background.webp');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 48px 20px 60px;
-            color: white;
-        }
+    html, body {
+        height: 100%;
+    }
 
-        /* ---- GENERATOR CARD ---- */
-        .gen-card {
-            background: rgba(30,41,59,0.85);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 22px;
-            padding: 36px 40px 32px;
-            width: 100%;
-            max-width: 560px;
-            margin-bottom: 36px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-        }
+    body {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        /* Background image lives alongside this file in the repo and is
+           always named exactly "Notion Background.webp" (capital N and B,
+           space-separated). GitHub Pages is case-sensitive, so this must
+           match the stored filename exactly — swap the file, not this rule. */
+        background-color: #0f172a;
+        background-image: url('Notion%20Background.webp');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        color: white;
+        overflow: hidden;
+    }
 
-        .logo { font-size: 32px; margin-bottom: 10px; }
+    /* ================= WIDGET CARD ================= */
+    .widget {
+        position: relative;
+        width: 520px;
+        height: 480px;
+        max-width: 100%;
+        border-radius: 26px;
+        overflow: hidden;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08);
+    }
 
-        h1 {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 6px;
-            letter-spacing: -0.3px;
-        }
+    #bg-canvas {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
 
-        .subtitle {
-            font-size: 14px;
-            color: rgba(255,255,255,0.45);
-            margin-bottom: 28px;
-            line-height: 1.6;
-        }
+    /* Dark glass tint sits above the animated canvas, below the text */
+    .glass-tint {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.18);
+        pointer-events: none;
+    }
 
-        .input-row {
-            display: flex;
-            gap: 10px;
-        }
+    .overlay {
+        position: absolute;
+        inset: 0;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        font-family: inherit;
+    }
 
-        #city-input {
-            flex: 1;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.14);
-            border-radius: 12px;
-            padding: 13px 16px;
-            font-size: 15px;
-            color: white;
-            outline: none;
-            font-family: inherit;
-            transition: border-color 0.2s, background 0.2s;
-        }
-        #city-input:focus {
-            border-color: rgba(99,179,237,0.55);
-            background: rgba(255,255,255,0.11);
-        }
-        #city-input::placeholder { color: rgba(255,255,255,0.3); }
+    /* ---- top row: location text + manual override search ---- */
+    .top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+    }
 
-        #generate-btn {
-            background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 13px 22px;
-            font-size: 14px;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
-            font-family: inherit;
-            white-space: nowrap;
-            transition: opacity 0.2s, transform 0.1s;
-            letter-spacing: 0.2px;
-        }
-        #generate-btn:hover:not(:disabled) { opacity: 0.88; }
-        #generate-btn:active:not(:disabled) { transform: scale(0.97); }
-        #generate-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .loc-text { line-height: 1.5; }
+    .loc-name {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        color: rgba(255,255,255,0.72);
+        text-transform: uppercase;
+    }
+    .loc-date {
+        font-size: 12px;
+        color: rgba(255,255,255,0.42);
+    }
+    .loc-time {
+        font-size: 12px;
+        font-weight: 500;
+        color: rgba(255,255,255,0.42);
+    }
 
-        #status {
-            margin-top: 14px;
-            font-size: 13px;
-            color: rgba(255,255,255,0.45);
-            min-height: 20px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        #status.error { color: #f87171; }
-        #status.success { color: #4ade80; }
+    #city-search {
+        background: rgba(20,20,30,0.45);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: 12.5px;
+        color: white;
+        outline: none;
+        font-family: inherit;
+        width: 180px;
+        backdrop-filter: blur(6px);
+        transition: border-color 0.2s, background 0.2s, width 0.2s;
+    }
+    #city-search::placeholder { color: rgba(255,255,255,0.4); }
+    #city-search:focus {
+        border-color: rgba(99,179,237,0.55);
+        background: rgba(20,20,30,0.65);
+        width: 210px;
+    }
 
-        /* Spinner */
-        .spinner {
-            display: none;
-            width: 14px; height: 14px;
-            border: 2px solid rgba(255,255,255,0.2);
-            border-top-color: rgba(255,255,255,0.8);
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            flex-shrink: 0;
-        }
-        .spinner.visible { display: block; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+    /* ---- main weather block ---- */
+    .main-block { margin-top: 34px; }
+    .weather-icon {
+        font-size: 66px;
+        line-height: 1;
+        margin-bottom: 14px;
+        filter: drop-shadow(0 6px 14px rgba(0,0,0,0.35));
+    }
+    .temp {
+        font-size: 76px;
+        font-weight: 700;
+        letter-spacing: -1px;
+        line-height: 1;
+    }
+    .desc {
+        margin-top: 14px;
+        font-size: 22px;
+        font-weight: 500;
+        color: rgba(255,255,255,0.92);
+    }
+    .feels-like {
+        margin-top: 4px;
+        font-size: 14px;
+        color: rgba(255,255,255,0.52);
+    }
 
-        /* ---- OUTPUT SECTION ---- */
-        #output {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            gap: 18px;
-            width: 100%;
-        }
+    /* ---- bottom stats row ---- */
+    .stats-row {
+        margin-top: auto;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255,255,255,0.13);
+        display: flex;
+    }
+    .stat {
+        flex: 1;
+        text-align: center;
+        position: relative;
+        padding: 4px 0 0;
+    }
+    .stat:not(:first-child)::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 4px; bottom: 0;
+        width: 1px;
+        background: rgba(255,255,255,0.10);
+    }
+    .stat-icon { font-size: 18px; }
+    .stat-label {
+        margin-top: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        color: rgba(255,255,255,0.42);
+    }
+    .stat-value {
+        margin-top: 4px;
+        font-size: 14px;
+        font-weight: 600;
+    }
 
-        .canvas-wrap {
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08);
-        }
+    /* ---- status / loading / error banner ---- */
+    #status-banner {
+        position: absolute;
+        left: 30px;
+        right: 30px;
+        bottom: 14px;
+        font-size: 11.5px;
+        text-align: center;
+        color: rgba(255,255,255,0.4);
+        pointer-events: none;
+        display: none;
+    }
+    #status-banner.visible { display: block; }
+    #status-banner.error { color: #f87171; }
 
-        #widget-canvas {
-            display: block;
-        }
-
-        .action-row {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        #copy-btn {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 13px 28px;
-            font-size: 14px;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
-            font-family: inherit;
-            transition: opacity 0.2s, transform 0.1s, background 0.3s;
-            letter-spacing: 0.2px;
-        }
-        #copy-btn:hover:not(:disabled) { opacity: 0.88; }
-        #copy-btn:active:not(:disabled) { transform: scale(0.97); }
-        #copy-btn.copied {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        }
-        #copy-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        #regenerate-btn {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 12px;
-            padding: 13px 18px;
-            font-size: 14px;
-            color: rgba(255,255,255,0.7);
-            cursor: pointer;
-            font-family: inherit;
-            transition: background 0.2s;
-        }
-        #regenerate-btn:hover { background: rgba(255,255,255,0.14); }
-
-        .notion-tip {
-            font-size: 12.5px;
-            color: rgba(255,255,255,0.35);
-            text-align: center;
-            max-width: 420px;
-            line-height: 1.7;
-        }
-        .notion-tip strong { color: rgba(255,255,255,0.6); }
-    </style>
+    /* Hide the stats/temp block content while nothing has loaded yet,
+       so we don't show "--" flickers before the first successful render. */
+    .widget.no-data .main-block,
+    .widget.no-data .stats-row { visibility: hidden; }
+</style>
 </head>
 <body>
 
-<div class="gen-card">
-    <div class="logo">🌤️</div>
-    <h1>Weather Widget Generator</h1>
-    <p class="subtitle">Enter a city to generate a weather snapshot image.<br>Copy it to clipboard and paste directly into Notion.</p>
+<div class="widget no-data" id="widget">
+    <canvas id="bg-canvas"></canvas>
+    <div class="glass-tint"></div>
 
-    <div class="input-row">
-        <input type="text" id="city-input" placeholder="e.g. Las Pinas, Tokyo, London, New York…" autocomplete="off" spellcheck="false">
-        <button id="generate-btn">Generate</button>
+    <div class="overlay">
+        <div class="top-row">
+            <div class="loc-text">
+                <div class="loc-name" id="loc-name">Locating…</div>
+                <div class="loc-date" id="loc-date">&nbsp;</div>
+                <div class="loc-time" id="loc-time">&nbsp;</div>
+            </div>
+            <input type="text" id="city-search" placeholder="Enter city…" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="main-block">
+            <div class="weather-icon" id="weather-icon">⛅</div>
+            <div class="temp" id="temp">--°</div>
+            <div class="desc" id="desc">&nbsp;</div>
+            <div class="feels-like" id="feels-like">&nbsp;</div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat">
+                <div class="stat-icon">💧</div>
+                <div class="stat-label">HUMIDITY</div>
+                <div class="stat-value" id="stat-humidity">--%</div>
+            </div>
+            <div class="stat">
+                <div class="stat-icon">💨</div>
+                <div class="stat-label">WIND</div>
+                <div class="stat-value" id="stat-wind">-- km/h</div>
+            </div>
+            <div class="stat">
+                <div class="stat-icon">☀️</div>
+                <div class="stat-label">UV INDEX</div>
+                <div class="stat-value" id="stat-uv">--</div>
+            </div>
+        </div>
     </div>
 
-    <div id="status">
-        <div class="spinner" id="spinner"></div>
-        <span id="status-text">Enter a city and press Generate.</span>
-    </div>
+    <div id="status-banner"></div>
 </div>
 
-<div id="output">
-    <div class="canvas-wrap">
-        <canvas id="widget-canvas"></canvas>
-    </div>
-    <div class="action-row">
-        <button id="copy-btn">&#128203; Copy Image</button>
-        <button id="regenerate-btn">&#8635; Regenerate</button>
-    </div>
-    <p class="notion-tip">
-        Click <strong>Copy Image</strong>, then in Notion click where you want it,<br>
-        and press <strong>Ctrl+V</strong> (or <strong>&#8984;+V</strong> on Mac) to paste.
-    </p>
-</div>
-
-<script>
-/* ================================================================
-   CONFIG
-================================================================ */
-const WIDGET_W      = 520;
-const WIDGET_H      = 480;
-const DPR           = Math.min(window.devicePixelRatio || 1, 2);
-const GEOCODE_URL   = 'https://geocoding-api.open-meteo.com/v1/search';
-const WEATHER_URL   = 'https://api.open-meteo.com/v1/forecast';
-
-/* ================================================================
-   WEATHER CODE MAP
-================================================================ */
-const WEATHER_MAP = {
-    0:  { desc:'Clear Sky',       icon:'\u2600\uFE0F', type:'clear'   },
-    1:  { desc:'Mainly Clear',    icon:'\uD83C\uDF24\uFE0F', type:'clear'   },
-    2:  { desc:'Partly Cloudy',   icon:'\u26C5',       type:'cloudy'  },
-    3:  { desc:'Overcast',        icon:'\u2601\uFE0F', type:'cloudy'  },
-    45: { desc:'Foggy',           icon:'\uD83C\uDF2B\uFE0F', type:'fog'    },
-    48: { desc:'Icy Fog',         icon:'\uD83C\uDF2B\uFE0F', type:'fog'    },
-    51: { desc:'Light Drizzle',   icon:'\uD83C\uDF26\uFE0F', type:'rain'   },
-    53: { desc:'Drizzle',         icon:'\uD83C\uDF26\uFE0F', type:'rain'   },
-    55: { desc:'Heavy Drizzle',   icon:'\uD83C\uDF27\uFE0F', type:'rain'   },
-    61: { desc:'Light Rain',      icon:'\uD83C\uDF26\uFE0F', type:'rain'   },
-    63: { desc:'Rain',            icon:'\uD83C\uDF27\uFE0F', type:'rain'   },
-    65: { desc:'Heavy Rain',      icon:'\uD83C\uDF27\uFE0F', type:'rain'   },
-    71: { desc:'Light Snow',      icon:'\uD83C\uDF28\uFE0F', type:'snow'   },
-    73: { desc:'Snow',            icon:'\u2744\uFE0F',       type:'snow'   },
-    75: { desc:'Heavy Snow',      icon:'\uD83C\uDF28\uFE0F', type:'snow'   },
-    80: { desc:'Showers',         icon:'\uD83C\uDF26\uFE0F', type:'rain'   },
-    81: { desc:'Heavy Showers',   icon:'\uD83C\uDF27\uFE0F', type:'rain'   },
-    82: { desc:'Violent Shower',  icon:'\uD83C\uDF27\uFE0F', type:'rain'   },
-    85: { desc:'Snow Showers',    icon:'\uD83C\uDF28\uFE0F', type:'snow'   },
-    95: { desc:'Thunderstorm',    icon:'\u26C8\uFE0F',       type:'thunder'},
-    96: { desc:'Thunderstorm',    icon:'\u26C8\uFE0F',       type:'thunder'},
-    99: { desc:'Heavy Storm',     icon:'\u26C8\uFE0F',       type:'thunder'},
-};
-
-function getWeatherInfo(code) {
-    return WEATHER_MAP[code] || { desc:'Unknown', icon:'?', type:'clear' };
-}
-
-/* ================================================================
-   HELPERS
-================================================================ */
-function getTimeOfDay(hour) {
-    if (hour >= 5  && hour < 8)  return 'sunrise';
-    if (hour >= 8  && hour < 17) return 'day';
-    if (hour >= 17 && hour < 19) return 'sunset';
-    return 'night';
-}
-
-function formatTime12h(date) {
-    var h = date.getHours(), m = date.getMinutes();
-    var ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    return h + ':' + (m < 10 ? '0'+m : m) + ' ' + ampm;
-}
-
-function formatDate(date) {
-    var days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    var months = ['January','February','March','April','May','June',
-                  'July','August','September','October','November','December'];
-    return days[date.getDay()] + ', ' + months[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
-}
-
-function uvLabel(uv) {
-    if (uv <= 2)  return uv + ' — Low';
-    if (uv <= 5)  return uv + ' — Moderate';
-    if (uv <= 7)  return uv + ' — High';
-    if (uv <= 10) return uv + ' — Very High';
-    return uv + ' — Extreme';
-}
-
-/* Seeded pseudo-random (deterministic scatter for static effects) */
-function seededRand(seed) {
-    var x = Math.sin(seed + 1) * 10000;
-    return x - Math.floor(x);
-}
-
-/* ================================================================
-   BACKGROUND GRADIENTS
-================================================================ */
-var GRADIENTS = {
-    sunrise:{
-        clear:   ['#f97316','#fbbf24','#7c3aed'],
-        cloudy:  ['#b45309','#78716c','#3b3b5c'],
-        rain:    ['#78716c','#475569','#1e293b'],
-        thunder: ['#44403c','#1e1b4b','#0f0f23'],
-        fog:     ['#c8c4c0','#9ca3af','#4b5563'],
-        snow:    ['#e0e7ff','#c7d2fe','#6366f1'],
-    },
-    day:{
-        clear:   ['#0ea5e9','#38bdf8','#7dd3fc'],
-        cloudy:  ['#64748b','#475569','#334155'],
-        rain:    ['#334155','#1e293b','#0f172a'],
-        thunder: ['#1e1b4b','#312e81','#0f0f23'],
-        fog:     ['#94a3b8','#64748b','#475569'],
-        snow:    ['#bae6fd','#e0f2fe','#dde6f0'],
-    },
-    sunset:{
-        clear:   ['#dc2626','#f97316','#7c3aed'],
-        cloudy:  ['#92400e','#78350f','#3b2a1a'],
-        rain:    ['#44403c','#292524','#0f172a'],
-        thunder: ['#1c1917','#0f172a','#030712'],
-        fog:     ['#a8a29e','#78716c','#44403c'],
-        snow:    ['#fecaca','#c7d2fe','#818cf8'],
-    },
-    night:{
-        clear:   ['#020617','#0f172a','#1e1b4b'],
-        cloudy:  ['#1c1917','#0f172a','#020617'],
-        rain:    ['#020617','#0c1931','#040d1c'],
-        thunder: ['#020617','#1e1b4b','#0a0a1a'],
-        fog:     ['#1e293b','#0f172a','#020617'],
-        snow:    ['#1e3a5f','#1e293b','#020617'],
-    },
-};
-
-function makeGradient(ctx, type, tod, w, h) {
-    var cols = (GRADIENTS[tod] || GRADIENTS.day)[type] || GRADIENTS.day.clear;
-    var grd  = ctx.createLinearGradient(w * 0.2, 0, w, h);
-    grd.addColorStop(0,   cols[0]);
-    grd.addColorStop(0.5, cols[1]);
-    grd.addColorStop(1,   cols[2]);
-    return grd;
-}
-
-/* ================================================================
-   STATIC WEATHER EFFECTS
-================================================================ */
-function drawEffects(ctx, type, tod, w, h) {
-    ctx.save();
-
-    /* --- CLEAR DAY: sun glow + rays --- */
-    if (type === 'clear' && tod !== 'night') {
-        var sx = w * 0.80, sy = h * 0.18;
-        var glow = ctx.createRadialGradient(sx,sy,18,sx,sy,140);
-        glow.addColorStop(0, 'rgba(255,245,100,0.32)');
-        glow.addColorStop(1, 'rgba(255,200,50,0)');
-        ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(sx,sy,140,0,Math.PI*2); ctx.fill();
-        for (var i = 0; i < 14; i++) {
-            var ang = (i/14)*Math.PI*2;
-            ctx.strokeStyle = 'rgba(255,240,100,0.07)';
-            ctx.lineWidth   = 2.5;
-            ctx.beginPath();
-            ctx.moveTo(sx, sy);
-            ctx.lineTo(sx + Math.cos(ang)*120, sy + Math.sin(ang)*120);
-            ctx.stroke();
-        }
-        ctx.fillStyle = 'rgba(255,248,120,0.92)';
-        ctx.beginPath(); ctx.arc(sx,sy,26,0,Math.PI*2); ctx.fill();
-        /* soft inner halo */
-        var halo = ctx.createRadialGradient(sx,sy,22,sx,sy,50);
-        halo.addColorStop(0,'rgba(255,255,200,0.25)');
-        halo.addColorStop(1,'rgba(255,255,200,0)');
-        ctx.fillStyle = halo;
-        ctx.beginPath(); ctx.arc(sx,sy,50,0,Math.PI*2); ctx.fill();
-    }
-
-    /* --- CLEAR NIGHT: stars + moon --- */
-    if (type === 'clear' && tod === 'night') {
-        for (var j = 0; j < 60; j++) {
-            var sx2 = seededRand(j*3.7) * w;
-            var sy2 = seededRand(j*2.1) * h * 0.68;
-            var sr  = 0.5 + seededRand(j*5.3) * 1.6;
-            var sa  = 0.35 + seededRand(j*1.9) * 0.65;
-            ctx.fillStyle = 'rgba(255,255,255,'+sa+')';
-            ctx.beginPath(); ctx.arc(sx2,sy2,sr,0,Math.PI*2); ctx.fill();
-        }
-        var mx=w*0.80, my=h*0.20, mr=34;
-        var mgrd=ctx.createRadialGradient(mx,my,mr,mx,my,mr*3.2);
-        mgrd.addColorStop(0,'rgba(255,255,210,0.22)'); mgrd.addColorStop(1,'rgba(255,255,210,0)');
-        ctx.fillStyle=mgrd; ctx.beginPath(); ctx.arc(mx,my,mr*3.2,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle='#fef9c3';
-        ctx.beginPath(); ctx.arc(mx,my,mr,0,Math.PI*2); ctx.fill();
-        /* crescent shadow — reuse night clear dark color */
-        ctx.fillStyle='#0f172a';
-        ctx.beginPath(); ctx.arc(mx+11,my-5,mr*0.87,0,Math.PI*2); ctx.fill();
-    }
-
-    /* --- CLOUDY / FOG: cloud puffs --- */
-    if (type === 'cloudy' || type === 'fog') {
-        var clouds = [
-            {x:w*0.65, y:h*0.08, r:60, op:0.10},
-            {x:w*0.38, y:h*0.14, r:50, op:0.08},
-            {x:w*0.80, y:h*0.30, r:42, op:0.07},
-            {x:w*0.18, y:h*0.10, r:38, op:0.09},
-            {x:w*0.55, y:h*0.32, r:32, op:0.06},
-        ];
-        clouds.forEach(function(c) {
-            ctx.fillStyle = 'rgba(255,255,255,'+c.op+')';
-            ctx.beginPath();
-            ctx.arc(c.x,           c.y,           c.r,      0, Math.PI*2);
-            ctx.arc(c.x+c.r*0.75, c.y-c.r*0.32, c.r*0.72, 0, Math.PI*2);
-            ctx.arc(c.x+c.r*1.35, c.y,           c.r*0.58, 0, Math.PI*2);
-            ctx.fill();
-        });
-        if (type === 'fog') {
-            for (var fi=0;fi<4;fi++) {
-                var fy = h*0.25 + fi*h*0.16;
-                var fgrd = ctx.createLinearGradient(0,fy,w,fy);
-                fgrd.addColorStop(0,'rgba(255,255,255,0)');
-                fgrd.addColorStop(0.35,'rgba(255,255,255,0.05)');
-                fgrd.addColorStop(0.65,'rgba(255,255,255,0.07)');
-                fgrd.addColorStop(1,'rgba(255,255,255,0)');
-                ctx.fillStyle=fgrd;
-                ctx.fillRect(0,fy,w,16);
-            }
-        }
-    }
-
-    /* --- RAIN / THUNDER: drops + wind streaks --- */
-    if (type === 'rain' || type === 'thunder') {
-        for (var ri=0; ri<80; ri++) {
-            var rx  = seededRand(ri*4.3) * w;
-            var ry  = seededRand(ri*2.7) * h;
-            var rl  = 10 + seededRand(ri*6.1)*22;
-            var rop = 0.18 + seededRand(ri*3.9)*0.28;
-            ctx.strokeStyle = 'rgba(174,214,241,'+rop+')';
-            ctx.lineWidth   = 0.9;
-            ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(rx+4.5, ry+rl); ctx.stroke();
-        }
-        for (var wi2=0; wi2<14; wi2++) {
-            var wx = seededRand(wi2*7.1+50)*w;
-            var wy = seededRand(wi2*3.3+20)*h;
-            var wl = 35 + seededRand(wi2*5.7)*65;
-            var wo = 0.05 + seededRand(wi2*2.1)*0.09;
-            ctx.strokeStyle = 'rgba(255,255,255,'+wo+')';
-            ctx.lineWidth   = 0.7;
-            ctx.beginPath();
-            ctx.moveTo(wx, wy);
-            ctx.lineTo(wx+wl, wy + seededRand(wi2*4.4)*8-4);
-            ctx.stroke();
-        }
-    }
-
-    /* --- THUNDER: lightning bolt --- */
-    if (type === 'thunder') {
-        ctx.save();
-        ctx.strokeStyle = 'rgba(210,210,255,0.65)';
-        ctx.lineWidth   = 3;
-        ctx.shadowBlur  = 18;
-        ctx.shadowColor = 'rgba(180,180,255,0.95)';
-        var lx = w * 0.74, ly = h * 0.04;
-        var bolt = [[lx,ly],[lx-9,ly+44],[lx+6,ly+44],[lx-13,ly+90]];
-        ctx.beginPath();
-        bolt.forEach(function(pt,i){ i===0 ? ctx.moveTo(pt[0],pt[1]) : ctx.lineTo(pt[0],pt[1]); });
-        ctx.stroke();
-        /* second smaller bolt */
-        ctx.strokeStyle = 'rgba(210,210,255,0.30)';
-        ctx.lineWidth   = 1.5;
-        ctx.shadowBlur  = 8;
-        var lx2 = lx+40, ly2 = ly+20;
-        var bolt2 = [[lx2,ly2],[lx2-5,ly2+28],[lx2+4,ly2+28],[lx2-8,ly2+56]];
-        ctx.beginPath();
-        bolt2.forEach(function(pt,i){ i===0 ? ctx.moveTo(pt[0],pt[1]) : ctx.lineTo(pt[0],pt[1]); });
-        ctx.stroke();
-        ctx.restore();
-    }
-
-    /* --- SNOW: flakes --- */
-    if (type === 'snow') {
-        for (var si=0; si<60; si++) {
-            var snx = seededRand(si*3.1)*w;
-            var sny = seededRand(si*1.8)*h;
-            var snr = 1.5 + seededRand(si*4.7)*3;
-            var sno = 0.35 + seededRand(si*2.3)*0.65;
-            ctx.fillStyle = 'rgba(255,255,255,'+sno+')';
-            ctx.beginPath(); ctx.arc(snx,sny,snr,0,Math.PI*2); ctx.fill();
-        }
-    }
-
-    ctx.restore();
-}
-
-/* ================================================================
-   CANVAS DRAWING UTILITIES
-================================================================ */
-function roundedRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x+r, y);
-    ctx.lineTo(x+w-r, y);   ctx.quadraticCurveTo(x+w, y,   x+w, y+r);
-    ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-    ctx.lineTo(x+r, y+h);   ctx.quadraticCurveTo(x,   y+h, x,   y+h-r);
-    ctx.lineTo(x, y+r);     ctx.quadraticCurveTo(x,   y,   x+r, y);
-    ctx.closePath();
-}
-
-function txt(ctx, text, x, y, font, color, align, baseline) {
-    ctx.save();
-    ctx.font         = font;
-    ctx.fillStyle    = color;
-    ctx.textAlign    = align    || 'left';
-    ctx.textBaseline = baseline || 'alphabetic';
-    ctx.fillText(text, x, y);
-    ctx.restore();
-}
-
-/* ================================================================
-   RENDER WIDGET TO CANVAS
-================================================================ */
-function renderWidget(canvas, d) {
-    var tod = getTimeOfDay(d.now.getHours());
-    var w   = WIDGET_W;
-    var h   = WIDGET_H;
-
-    canvas.width        = w * DPR;
-    canvas.height       = h * DPR;
-    canvas.style.width  = w + 'px';
-    canvas.style.height = h + 'px';
-
-    var ctx = canvas.getContext('2d');
-    ctx.scale(DPR, DPR);
-
-    /* 1 — Background gradient */
-    roundedRect(ctx, 0, 0, w, h, 26);
-    ctx.fillStyle = makeGradient(ctx, d.type, tod, w, h);
-    ctx.fill();
-
-    /* 2 — Weather effects (clipped) */
-    ctx.save();
-    roundedRect(ctx, 0, 0, w, h, 26);
-    ctx.clip();
-    drawEffects(ctx, d.type, tod, w, h);
-    ctx.restore();
-
-    /* 3 — Dark glass overlay */
-    ctx.save();
-    roundedRect(ctx, 0, 0, w, h, 26);
-    ctx.clip();
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    ctx.fill();
-    ctx.restore();
-
-    /* ---- CONTENT ---- */
-    var PAD   = 30;
-    var FONT  = '"Segoe UI", system-ui, -apple-system, sans-serif';
-
-    /* 4 — Location */
-    txt(ctx, d.locationName.toUpperCase(), PAD, PAD+15,
-        '700 13px '+FONT, 'rgba(255,255,255,0.72)', 'left');
-
-    /* 5 — Date */
-    txt(ctx, formatDate(d.now), PAD, PAD+36,
-        '400 12px '+FONT, 'rgba(255,255,255,0.42)', 'left');
-
-    /* 6 — Time */
-    txt(ctx, formatTime12h(d.now), PAD, PAD+54,
-        '500 12px '+FONT, 'rgba(255,255,255,0.42)', 'left');
-
-    /* 7 — Big weather emoji */
-    ctx.font         = '70px serif';
-    ctx.textBaseline = 'middle';
-    ctx.textAlign    = 'left';
-    ctx.fillText(d.icon, PAD, 165);
-
-    /* 8 — Temperature */
-    txt(ctx, d.temp+'\u00B0C', PAD, 230,
-        '700 76px '+FONT, 'white', 'left', 'top');
-
-    /* 9 — Condition */
-    txt(ctx, d.desc, PAD, 320,
-        '500 22px '+FONT, 'rgba(255,255,255,0.92)', 'left', 'top');
-
-    /* 10 — Feels like */
-    txt(ctx, 'Feels like '+d.feelsLike+'\u00B0C', PAD, 352,
-        '400 14px '+FONT, 'rgba(255,255,255,0.52)', 'left', 'top');
-
-    /* 11 — Divider line */
-    var divY = h - 110;
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.13)';
-    ctx.lineWidth   = 1;
-    ctx.beginPath(); ctx.moveTo(PAD, divY); ctx.lineTo(w-PAD, divY); ctx.stroke();
-    ctx.restore();
-
-    /* 12 — Stats row */
-    var statsY  = divY + 22;
-    var statDefs = [
-        { icon:'\uD83D\uDCA7', label:'HUMIDITY',  value: d.humidity + '%'     },
-        { icon:'\uD83D\uDCA8', label:'WIND',       value: d.wind + ' km/h'    },
-        { icon:'\u2600\uFE0F', label:'UV INDEX',   value: uvLabel(d.uv)       },
-    ];
-    var colW  = (w - PAD*2) / 3;
-
-    statDefs.forEach(function(col, i) {
-        var cx = PAD + colW * i + colW / 2;
-
-        /* vertical divider */
-        if (i > 0) {
-            ctx.save();
-            ctx.strokeStyle = 'rgba(255,255,255,0.10)';
-            ctx.lineWidth   = 1;
-            ctx.beginPath();
-            ctx.moveTo(PAD + colW*i, divY+10);
-            ctx.lineTo(PAD + colW*i, h-16);
-            ctx.stroke();
-            ctx.restore();
-        }
-
-        /* emoji icon */
-        ctx.font         = '19px serif';
-        ctx.textAlign    = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(col.icon, cx, statsY + 2);
-
-        /* label */
-        txt(ctx, col.label, cx, statsY+22, '600 11px '+FONT, 'rgba(255,255,255,0.42)', 'center', 'top');
-
-        /* value */
-        txt(ctx, col.value, cx, statsY+40, '600 14px '+FONT, 'white', 'center', 'top');
-    });
-}
-
-/* ================================================================
-   API CALLS
-================================================================ */
-async function geocodeCity(city) {
-    var res  = await fetch(GEOCODE_URL+'?name='+encodeURIComponent(city)+'&count=1&language=en&format=json');
-    var data = await res.json();
-    if (!data.results || !data.results.length) throw new Error('City not found. Try a simpler spelling.');
-    var r = data.results[0];
-    return { lat: r.latitude, lon: r.longitude, name: r.name, country: r.country_code.toUpperCase() };
-}
-
-async function fetchWeather(lat, lon) {
-    var res = await fetch(WEATHER_URL
-        +'?latitude='+lat
-        +'&longitude='+lon
-        +'&current=temperature_2m,apparent_temperature,weather_code,relative_humidity_2m,wind_speed_10m,uv_index'
-        +'&timezone=auto&forecast_days=1');
-    return await res.json();
-}
-
-/* ================================================================
-   UI WIRING
-================================================================ */
-var cityInput    = document.getElementById('city-input');
-var generateBtn  = document.getElementById('generate-btn');
-var spinner      = document.getElementById('spinner');
-var statusText   = document.getElementById('status-text');
-var statusEl     = document.getElementById('status');
-var outputEl     = document.getElementById('output');
-var canvasEl     = document.getElementById('widget-canvas');
-var copyBtn      = document.getElementById('copy-btn');
-var regenBtn     = document.getElementById('regenerate-btn');
-
-function setStatus(msg, mode) {
-    statusText.textContent = msg;
-    statusEl.className     = mode || '';
-    spinner.classList.toggle('visible', mode === 'loading');
-}
-
-var lastCity = '';
-
-async function generate() {
-    var city = cityInput.value.trim();
-    if (!city) { setStatus('Please enter a city name.', 'error'); return; }
-
-    lastCity = city;
-    generateBtn.disabled = true;
-    outputEl.style.display = 'none';
-    setStatus('Looking up location\u2026', 'loading');
-
-    try {
-        var geo = await geocodeCity(city);
-        setStatus('Fetching weather for '+geo.name+'\u2026', 'loading');
-
-        var weather = await fetchWeather(geo.lat, geo.lon);
-        var cur     = weather.current;
-        var info    = getWeatherInfo(cur.weather_code);
-
-        setStatus('Rendering\u2026', 'loading');
-
-        renderWidget(canvasEl, {
-            type:         info.type,
-            icon:         info.icon,
-            desc:         info.desc,
-            temp:         Math.round(cur.temperature_2m),
-            feelsLike:    Math.round(cur.apparent_temperature),
-            humidity:     cur.relative_humidity_2m,
-            wind:         Math.round(cur.wind_speed_10m),
-            uv:           Math.round(cur.uv_index || 0),
-            locationName: geo.name + ', ' + geo.country,
-            now:          new Date(),
-        });
-
-        outputEl.style.display = 'flex';
-        /* Reset copy button in case it was in "Copied" state from a prior run */
-        resetCopyBtn();
-        setStatus('\u2713 Generated for ' + geo.name + ', ' + geo.country + ' \u00B7 ' + new Date().toLocaleTimeString(), 'success');
-
-    } catch(err) {
-        setStatus((err.message || 'Something went wrong. Check your connection and try again.'), 'error');
-    } finally {
-        generateBtn.disabled = false;
-    }
-}
-
-generateBtn.addEventListener('click', generate);
-cityInput.addEventListener('keydown', function(e){ if(e.key==='Enter') generate(); });
-
-/* ---- COPY TO CLIPBOARD ---- */
-function resetCopyBtn() {
-    copyBtn.classList.remove('copied');
-    copyBtn.disabled    = false;
-    copyBtn.textContent = '\uD83D\uDCCB Copy Image';
-}
-
-copyBtn.addEventListener('click', function() {
-    copyBtn.disabled    = true;
-    copyBtn.textContent = 'Copying\u2026';
-
-    canvasEl.toBlob(function(blob) {
-        /* Modern Clipboard API — works in Chrome/Edge on file:// and https:// */
-        if (navigator.clipboard && window.ClipboardItem) {
-            navigator.clipboard.write([
-                new ClipboardItem({ 'image/png': blob })
-            ]).then(function() {
-                copyBtn.classList.add('copied');
-                copyBtn.disabled    = false;
-                copyBtn.textContent = '\u2713 Copied! Paste into Notion';
-                /* Auto-reset label after 4 s */
-                setTimeout(resetCopyBtn, 4000);
-            }).catch(function(err) {
-                /* Clipboard write blocked (e.g. Firefox) — fall back to download */
-                fallbackDownload(blob);
-            });
-        } else {
-            /* Browser doesn't support ClipboardItem — fall back to download */
-            fallbackDownload(blob);
-        }
-    }, 'image/png');
-});
-
-function fallbackDownload(blob) {
-    /* Offer a download as fallback when clipboard API is unavailable */
-    var url  = URL.createObjectURL(blob);
-    var link = document.createElement('a');
-    link.download = 'weather-widget.png';
-    link.href     = url;
-    link.click();
-    URL.revokeObjectURL(url);
-    copyBtn.disabled    = false;
-    copyBtn.textContent = '\uD83D\uDCCB Copy Image';
-    setStatus('\u26A0 Clipboard not available \u2014 image downloaded instead.', '');
-}
-
-regenBtn.addEventListener('click', function() {
-    if (lastCity) { cityInput.value = lastCity; generate(); }
-});
-</script>
+<script src="weather-widget.js"></script>
 </body>
 </html>
