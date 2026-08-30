@@ -3,7 +3,7 @@ console.log('✅ weather-widget.js loaded successfully!');
 
 // ⚠️ IMPORTANT: Replace with your actual OpenWeatherMap API key
 // Get free key from: https://openweathermap.org/api
-const API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY';
+const API_KEY = '097e35717e1b74faa32f4c6463a93fc8';
 
 // ========== IP-BASED GEOLOCATION (WORKS IN NOTION IFRAME) ==========
 async function getLocationByIP() {
