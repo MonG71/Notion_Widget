@@ -1,8 +1,8 @@
 // weather-widget.js
 console.log('✅ weather-widget.js loaded successfully!');
 
-// ⚠️ IMPORTANT: Replace this with your actual OpenWeatherMap API key
-// Get your free API key at: https://openweathermap.org/api
+// ⚠️ IMPORTANT: Replace with your actual OpenWeatherMap API key
+// Get free key from: https://openweathermap.org/api
 const API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY';
 
 // ========== IP-BASED GEOLOCATION (WORKS IN NOTION IFRAME) ==========
@@ -13,7 +13,6 @@ async function getLocationByIP() {
         if (!response.ok) throw new Error('IP geolocation request failed');
         const data = await response.json();
         console.log('📍 Location detected:', data.city + ', ' + data.country_name);
-        console.log('   Coordinates:', data.latitude + ', ' + data.longitude);
         return {
             lat: data.latitude,
             lon: data.longitude,
@@ -22,7 +21,6 @@ async function getLocationByIP() {
         };
     } catch (error) {
         console.warn('⚠️ IP geolocation failed, using fallback city (New York):', error);
-        // Fallback to New York if IP lookup fails
         return { 
             lat: 40.7128, 
             lon: -74.0060, 
@@ -121,23 +119,23 @@ function updateUI(data, cityName) {
 // ========== WEATHER EMOJI MAPPER ==========
 function getWeatherEmoji(iconCode) {
     const map = {
-        '01d': '☀️',   // clear sky day
-        '01n': '🌙',   // clear sky night
-        '02d': '⛅',   // few clouds day
-        '02n': '☁️',   // few clouds night
-        '03d': '☁️',   // scattered clouds
+        '01d': '☀️',
+        '01n': '🌙',
+        '02d': '⛅',
+        '02n': '☁️',
+        '03d': '☁️',
         '03n': '☁️',
-        '04d': '☁️',   // broken clouds
+        '04d': '☁️',
         '04n': '☁️',
-        '09d': '🌧️',   // shower rain
+        '09d': '🌧️',
         '09n': '🌧️',
-        '10d': '🌦️',   // rain day
-        '10n': '🌧️',   // rain night
-        '11d': '⛈️',   // thunderstorm
+        '10d': '🌦️',
+        '10n': '🌧️',
+        '11d': '⛈️',
         '11n': '⛈️',
-        '13d': '❄️',   // snow
+        '13d': '❄️',
         '13n': '❄️',
-        '50d': '🌫️',   // mist
+        '50d': '🌫️',
         '50n': '🌫️'
     };
     return map[iconCode] || '🌤️';
@@ -214,15 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-    
-    // Also search when user clicks away (blur) if they typed something
-    searchInput.addEventListener('blur', () => {
-        const city = searchInput.value.trim();
-        if (city && city.length > 2) {
-            console.log('🔍 User typed:', city);
-            fetchWeatherByCity(city);
-        }
-    });
 });
 
 // ========== NETWORK RECOVERY ==========
@@ -230,9 +219,8 @@ window.addEventListener('online', () => {
     console.log('🌐 Network connection restored');
     const currentLocation = document.getElementById('loc-name').textContent;
     if (currentLocation && currentLocation !== 'Locating…' && currentLocation !== 'Searching…' && currentLocation !== 'API Key Required') {
-        // Re-fetch weather when connection is restored
         initWidget();
     }
 });
 
-console.log('✅ weather-widget.js setup complete! Waiting for DOM...');
+console.log('✅ weather-widget.js setup complete!');
