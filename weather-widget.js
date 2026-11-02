@@ -21,11 +21,11 @@ async function getLocationByIP() {
         };
     } catch (error) {
         console.warn('⚠️ IP geolocation failed, using fallback city (New York):', error);
-        return { 
-            lat: 40.7128, 
-            lon: -74.0060, 
-            city: 'New York', 
-            country: 'US' 
+        return {
+            lat: 40.7128,
+            lon: -74.0060,
+            city: 'New York',
+            country: 'US'
         };
     }
 }
@@ -36,11 +36,9 @@ async function fetchWeatherByCoords(lat, lon, city) {
     try {
         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
         const response = await fetch(url);
-        
         if (!response.ok) {
             throw new Error('Weather API returned status: ' + response.status);
         }
-        
         const data = await response.json();
         console.log('✅ Weather data received for:', data.name);
         updateUI(data, city);
@@ -57,16 +55,18 @@ async function fetchWeatherByCity(city) {
     try {
         const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`;
         const response = await fetch(url);
-        
         if (!response.ok) {
             if (response.status === 404) {
                 throw new Error('City not found');
             }
             throw new Error('Weather API returned status: ' + response.status);
         }
-        
         const data = await response.json();
         console.log('✅ Weather data for:', data.name + ', ' + data.sys.country);
+        
+        // Save successfully queried city to localStorage
+        localStorage.setItem('savedWeatherLocation', city);
+
         updateUI(data, city);
         hideStatus();
     } catch (error) {
@@ -79,64 +79,54 @@ async function fetchWeatherByCity(city) {
 function updateUI(data, cityName) {
     const widget = document.getElementById('widget');
     widget.classList.remove('no-data');
-    
+
     // Location name
     const locationName = `${cityName}, ${data.sys.country || ''}`;
     document.getElementById('loc-name').textContent = locationName;
-    
+
     // Temperature
     const temp = Math.round(data.main.temp);
     document.getElementById('temp').textContent = `${temp}°`;
-    
+
     // Weather description (capitalize first letter)
     const description = data.weather[0].description;
     document.getElementById('desc').textContent = description.charAt(0).toUpperCase() + description.slice(1);
-    
+
     // Feels like
     const feelsLike = Math.round(data.main.feels_like);
     document.getElementById('feels-like').textContent = `Feels like ${feelsLike}°`;
-    
+
     // Humidity
     document.getElementById('stat-humidity').textContent = `${data.main.humidity}%`;
-    
+
     // Wind speed (convert from m/s to km/h)
     const windSpeed = Math.round(data.wind.speed * 3.6);
     document.getElementById('stat-wind').textContent = `${windSpeed} km/h`;
-    
+
     // UV Index (OpenWeatherMap free tier doesn't include UV data)
     document.getElementById('stat-uv').textContent = '--';
-    
+
     // Weather icon emoji
     const iconCode = data.weather[0].icon;
     document.getElementById('weather-icon').textContent = getWeatherEmoji(iconCode);
-    
+
     // Update date and time
     updateDateTime();
-    
     console.log('✅ UI updated successfully');
 }
 
 // ========== WEATHER EMOJI MAPPER ==========
 function getWeatherEmoji(iconCode) {
     const map = {
-        '01d': '☀️',
-        '01n': '🌙',
-        '02d': '⛅',
-        '02n': '☁️',
-        '03d': '☁️',
-        '03n': '☁️',
-        '04d': '☁️',
-        '04n': '☁️',
-        '09d': '🌧️',
-        '09n': '🌧️',
-        '10d': '🌦️',
-        '10n': '🌧️',
-        '11d': '⛈️',
-        '11n': '⛈️',
-        '13d': '❄️',
-        '13n': '❄️',
-        '50d': '🌫️',
-        '50n': '🌫️'
+        '01d': '☀️', '01n': '🌙',
+        '02d': '⛅', '02n': '☁️',
+        '03d': '☁️', '03n': '☁️',
+        '04d': '☁️', '04n': '☁️',
+        '09d': '🌧️', '09n': '🌧️',
+        '10d': '🌦️', '10n': '🌧️',
+        '11d': '⛈️', '11n': '⛈️',
+        '13d': '❄️', '13n': '❄️',
+        '50d': '🌫️', '50n': '🌫️'
     };
     return map[iconCode] || '🌤️';
 }
@@ -144,18 +134,9 @@ function getWeatherEmoji(iconCode) {
 // ========== UPDATE DATE AND TIME ==========
 function updateDateTime() {
     const now = new Date();
-    const dateOptions = { 
-        weekday: 'short', 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-    };
+    const dateOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
     document.getElementById('loc-date').textContent = now.toLocaleDateString('en-US', dateOptions);
-    
-    const timeOptions = { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-    };
+    const timeOptions = { hour: '2-digit', minute: '2-digit' };
     document.getElementById('loc-time').textContent = now.toLocaleTimeString('en-US', timeOptions);
 }
 
@@ -176,7 +157,7 @@ function hideStatus() {
 async function initWidget() {
     console.log('🚀 Initializing weather widget...');
     document.getElementById('loc-name').textContent = 'Locating…';
-    
+
     // Check if API key is configured
     if (API_KEY === 'YOUR_OPENWEATHERMAP_API_KEY') {
         console.error('❌ Please replace YOUR_OPENWEATHERMAP_API_KEY with your actual API key!');
@@ -184,8 +165,20 @@ async function initWidget() {
         document.getElementById('loc-name').textContent = 'API Key Required';
         return;
     }
-    
-    // Get location from IP and fetch weather
+
+    // Check if a location was saved in localStorage from a previous search
+    const savedCity = localStorage.getItem('savedWeatherLocation');
+    if (savedCity) {
+        console.log('📦 Found saved location in localStorage:', savedCity);
+        const searchInput = document.getElementById('city-search');
+        if (searchInput) {
+            searchInput.value = savedCity;
+        }
+        await fetchWeatherByCity(savedCity);
+        return;
+    }
+
+    // Fallback: Get location from IP and fetch weather
     const location = await getLocationByIP();
     await fetchWeatherByCoords(location.lat, location.lon, location.city);
 }
@@ -193,13 +186,13 @@ async function initWidget() {
 // ========== EVENT LISTENERS ==========
 document.addEventListener('DOMContentLoaded', () => {
     console.log('📄 DOM is ready');
-    
+
     // Update time every minute
     setInterval(updateDateTime, 60000);
-    
+
     // Initialize the widget
     initWidget();
-    
+
     // City search on Enter key
     const searchInput = document.getElementById('city-search');
     searchInput.addEventListener('keypress', (e) => {
